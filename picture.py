@@ -1,7 +1,11 @@
 from PIL import Image, ImageFilter, ImageEnhance, ImageDraw
 import numpy
-import pictureTools
 from math import floor
+from skimage.filters.rank.generic import entropy
+from scipy.spatial import Delaunay
+
+
+import pictureTools, entropyCalc
 
 
 class Picture():
@@ -11,6 +15,7 @@ class Picture():
 
 
     def _splitAreas(self, hCount, vCount=None):
+        """Splits image into evenly shaped rectangles based on hCount and vCount."""
         if vCount==None:
             vCount=hCount
         distanceX, distanceY = self.image.size[0]/hCount, self.image.size[1]/vCount
@@ -19,59 +24,76 @@ class Picture():
             for j in range(1,vCount+2):
                 x1,y1=floor(i*distanceX-distanceX),floor(j*distanceY-distanceY)
                 x2,y2=floor(i*distanceX),floor(j*distanceY)
-                dim=[(x1,y1), (x2,y1), (x2,y2), (x1,y2)]
-                pointsMap.append(dim)
+                pointsMap.append([(x1,y1), (x2,y1), (x2,y2), (x1,y2)])
         return pointsMap
 
 
-    def findSquares(self, hCount, vCount=None):
-        squaresMap=self._splitAreas(hCount, vCount)
-        return squaresMap[::2]
+    def splitToRectangles(self, hCount, vCount=None):
+        """Splits image to evenly sized rectangles based on hCount and vCount.
+        Returns coordinates of every second one."""
+        rectanglesMap=self._splitAreas(hCount, vCount)
+        return rectanglesMap[::2]
 
-    def findTriangles(self,hCount, vCount=None):
+
+    def splitToTriangles(self,hCount, vCount=None):
+        """Splits image to evenly sized rectangles based on hCount and vCount,
+        and thean split each of them into two triangles.
+        Returns coordinates of lower right triangle."""
         pointsMap=self._splitAreas(hCount, vCount)
         trianglesMap=[]
         for shape in pointsMap:
-            newTriangle=[shape[0], shape[2], shape[3]]
-            trianglesMap.append(newTriangle)
+            trianglesMap.append([shape[0], shape[2], shape[3]])
         return trianglesMap
         
 
-    def patternMask(self, shapeChoice, hCount=5, vCount=None):
-        if shapeChoice =="triangles":
-            shapeMap=self.findTriangles(hCount, vCount)
-        elif shapeChoice =="squares":
-            shapeMap=self.findSquares(hCount, vCount)
+    def shapeBasedMask(self, shape, hCount=5, vCount=None):
+        """Returns alpha mask of hCount x vCount given shapes."""
+        if shape =="triangles":
+            shapeMap=self.splitToTriangles(hCount, vCount)
+        elif shape =="rectangles":
+            shapeMap=self.splitToRectangles(hCount, vCount)
 
         alpha = Image.new('L', self.image.size,0)
         draw = ImageDraw.Draw(alpha)
         for shape in shapeMap:
             draw.polygon(shape,fill=255)
-        
         return alpha
                 
 
-    def joinWithMask(self,image,mask):
-        numpyImage=numpy.array(image)
-        numpyImageMask=numpy.dstack((numpyImage,numpy.array(mask)))
-        self.image=pictureTools.joinImages(self, numpyImageMask)
+    def pasteWithMask(self,pastedImage,mask):
+        """Pastes pastedImage based on mask."""
+        pastedWithMask=numpy.dstack((numpy.array(pastedImage),numpy.array(mask)))
+        self.image=pictureTools.mergeImages(self, pastedWithMask)
     
 
-    def blur(self, shapesType="squares", hCount=20, degree=10, vCount=None):
+    def blur(self, shape="rectangles", hCount=20, degree=10, vCount=None):
+        """Blurres shape based parts of image by given degree."""
         blurred=self.image.filter(ImageFilter.GaussianBlur(degree))
-        self.joinWithMask(blurred, self.patternMask(shapesType, hCount, vCount))
+        self.pasteWithMask(blurred, self.shapeBasedMask(shape, hCount, vCount))
  
 
-    def lighten(self, shapesType="squares", hCount=20, degree=1.2, vCount=None):
-        brighten=ImageEnhance.Brightness(self.image)
-        lightened=brighten.enhance(degree)
-        self.joinWithMask(lightened, self.patternMask(shapesType, hCount, vCount))
+    def lighten(self, shape="rectangles", hCount=20, degree=1.2, vCount=None):
+        """Lightens (darkens) shape based parts of image by given degree."""
+        lightened=ImageEnhance.Brightness(self.image).enhance(degree)
+        self.pasteWithMask(lightened, self.shapeBasedMask(shape, hCount, vCount))
    
-    def saturation(self, shapesType="squares", hCount=20, degree=0.7, vCount=None):
-        saturation = ImageEnhance.Color(self.image)
-        saturated=saturation.enhance(degree)
-        self.joinWithMask(saturated, self.patternMask(shapesType, hCount, vCount))
+
+    def saturate(self, shape="rectangles", hCount=20, degree=0.7, vCount=None):
+        """Saturates shape based parts of image by given degree."""
+        saturated=ImageEnhance.Color(self.image).enhance(degree)
+        self.pasteWithMask(saturated, self.shapeBasedMask(shape, hCount, vCount))
 
 
+    def triangulate(self, pointsCount=20):
+        """Creates triangulation effect based on pointsCount points of max entropy"""
+        baseImg = self.image.resize((1000, int(self.image.size[1]*1000/self.image.size[0])))
+        result=baseImg.copy()
+        discourageDistance=floor(numpy.sqrt(baseImg.size[0]*baseImg.size[1] / pointsCount))
+        interestPoints=entropyCalc.interestPointsCalc(baseImg, discourageDistance, pointsCount)
 
-        
+        for triangle in Delaunay(interestPoints).vertices:
+            triangleCoords=[interestPoints[triangle[0]], interestPoints[triangle[1]], interestPoints[triangle[2]]]
+            ImageDraw.Draw(result).polygon(
+                triangleCoords, 
+                fill=pictureTools.triangleColor(triangleCoords, baseImg))
+        self.image=result
