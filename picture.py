@@ -16,26 +16,32 @@ class Picture():
 
     def _splitAreas(self, hCount, vCount=None):
         """Splits image into evenly shaped rectangles based on hCount and vCount."""
-        if vCount==None:
-            vCount=hCount
         distanceX, distanceY = self.image.size[0]/hCount, self.image.size[1]/vCount
         pointsMap=[]
-        for i in range(1,hCount+2):
-            for j in range(1,vCount+2):
+        for i in range(1,hCount+1):
+            for j in range(1,vCount+1):
                 x1,y1=floor(i*distanceX-distanceX),floor(j*distanceY-distanceY)
                 x2,y2=floor(i*distanceX),floor(j*distanceY)
                 pointsMap.append([(x1,y1), (x2,y1), (x2,y2), (x1,y2)])
         return pointsMap
 
 
-    def splitToRectangles(self, hCount, vCount=None):
+    def splitToRectangles(self, hCount, vCount):
         """Splits image to evenly sized rectangles based on hCount and vCount.
         Returns coordinates of every second one."""
         rectanglesMap=self._splitAreas(hCount, vCount)
-        return rectanglesMap[::2]
+        if vCount%2==1:
+            return rectanglesMap[::2]
+        else:
+            helper1=helper2=[]
+            while rectanglesMap!=[]:
+                helper1+=rectanglesMap[0:vCount]
+                helper2+=rectanglesMap[vCount:2*vCount]
+                rectanglesMap=rectanglesMap[2*vCount:]
+            helper2=helper2[1:]
+            return helper1[::2]+helper2[::2]
 
-
-    def splitToTriangles(self,hCount, vCount=None):
+    def splitToTriangles(self,hCount, vCount):
         """Splits image to evenly sized rectangles based on hCount and vCount,
         and thean split each of them into two triangles.
         Returns coordinates of lower right triangle."""
@@ -48,6 +54,8 @@ class Picture():
 
     def shapeBasedMask(self, shape, hCount=5, vCount=None):
         """Returns alpha mask of hCount x vCount given shapes."""
+        if vCount==None:
+            vCount=hCount        
         if shape =="triangles":
             shapeMap=self.splitToTriangles(hCount, vCount)
         elif shape =="rectangles":
@@ -56,6 +64,7 @@ class Picture():
         alpha = Image.new('L', self.image.size,0)
         draw = ImageDraw.Draw(alpha)
         for shape in shapeMap:
+            print(shape)
             draw.polygon(shape,fill=255)
         return alpha
                 
