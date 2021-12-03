@@ -23,7 +23,7 @@ def lowerEntropy(entropyValues, pointIndex, discourageDistance):
     for y in range(max(0,pointIndex[1]-discourageDistance), min(len(entropyValues)-1,pointIndex[1]+discourageDistance)):
         for x in range(max(0,pointIndex[0]-discourageDistance), min(len(entropyValues[y])-1,pointIndex[0]+discourageDistance)):              
             if numpy.sqrt((x-pointIndex[0])**2 + (y-pointIndex[1])**2) <= discourageDistance:
-                entropyValues[y][x]=entropyValues[y][x]*numpy.sqrt((x-pointIndex[0])**2 + (y-pointIndex[1])**2)/discourageDistance
+                entropyValues[y][x]=entropyValues[y][x]*numpy.sqrt((x-pointIndex[0])**2 + (y-pointIndex[1])**2)/(0.75*discourageDistance)
     return entropyValues
 
 
@@ -45,7 +45,7 @@ def edgePoints(image, distance):
 
 def interestPointsCalc(pic, discourageDistance, pointsNumber):
     """Finds distinctive points of image for triangles corners."""
-    blurred=pic.filter(ImageFilter.GaussianBlur(2))
+    blurred=pic.filter(ImageFilter.GaussianBlur(3))
     entropyValues=imageEntropy(blurred)
     interestPoints=edgePoints(pic, discourageDistance*2)
     for i in range(0,pointsNumber):

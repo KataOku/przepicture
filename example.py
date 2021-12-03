@@ -17,7 +17,7 @@ pic3.image.save("output/pexels-simon-berger-1323550_saturate.jpg")
 
 
 
-#----------   Examples of triangulation   ----------
+# ----------   Examples of triangulation   ----------
 pic4 = picture.Picture("input/pexels-caio-56733.jpg")            
 pic4.triangulate(500)    
 pic4.image.save("output/pexels-caio-56733_triangulated_500.jpg")
@@ -28,11 +28,11 @@ pic5.image.save("output/pexels-caio-56733_triangulated_1000.jpg")
 
 pic6 = picture.Picture("input/pexels-caio-56733.jpg")            
 pic6.triangulate(5000)
-pic6.image.save("output/pexels-caio-56733_triangulated_5000_loerdist02.jpg")
+pic6.image.save("output/pexels-caio-56733_triangulated_5000.jpg")
 
 
 
-##----------   Examples of combined blur, lighten and saturation methods used with different shape masks.   ----------
+# ----------   Examples of combined blur, lighten and saturation methods used with different shape masks.   ----------
 # Example 1
 pic7 = picture.Picture("input/pexels-simon-berger-1323550.jpg")
 pic7.saturate("rectangles",4,degree=4)

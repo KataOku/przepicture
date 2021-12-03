@@ -4,7 +4,6 @@ from math import floor
 from skimage.filters.rank.generic import entropy
 from scipy.spatial import Delaunay
 
-
 import pictureTools, entropyCalc
 
 
@@ -33,13 +32,14 @@ class Picture():
         if vCount%2==1:
             return rectanglesMap[::2]
         else:
-            helper1=helper2=[]
+            helper1,helper2=[],[]
             while rectanglesMap!=[]:
                 helper1+=rectanglesMap[0:vCount]
                 helper2+=rectanglesMap[vCount:2*vCount]
                 rectanglesMap=rectanglesMap[2*vCount:]
             helper2=helper2[1:]
             return helper1[::2]+helper2[::2]
+
 
     def splitToTriangles(self,hCount, vCount):
         """Splits image to evenly sized rectangles based on hCount and vCount,
@@ -64,7 +64,6 @@ class Picture():
         alpha = Image.new('L', self.image.size,0)
         draw = ImageDraw.Draw(alpha)
         for shape in shapeMap:
-            print(shape)
             draw.polygon(shape,fill=255)
         return alpha
                 
@@ -98,7 +97,7 @@ class Picture():
         baseImg = self.image.resize((1000, int(self.image.size[1]*1000/self.image.size[0])))
         result=baseImg.copy()
         discourageDistance=floor(numpy.sqrt(baseImg.size[0]*baseImg.size[1] / pointsCount))
-        interestPoints=entropyCalc.interestPointsCalc(baseImg, discourageDistance, pointsCount)
+        interestPoints=entropyCalc.interestPointsCalc(baseImg, discourageDistance, pointsCount)        
 
         for triangle in Delaunay(interestPoints).vertices:
             triangleCoords=[interestPoints[triangle[0]], interestPoints[triangle[1]], interestPoints[triangle[2]]]

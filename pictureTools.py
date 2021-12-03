@@ -37,9 +37,9 @@ def triangleColor(triangle, image):
     d=(a+b+c)/2
     r=math.sqrt((d-a)*(d-b)*(d-c)/(d))
 
-    # half edge length of square inscribed in a cricle,
+    # quarter of edge length of square inscribed in a cricle,
     # capped at 2, so the square always exists
-    dist = max(2,r*math.sqrt(2)/2)
+    dist = max(2,r/(math.sqrt(2)*2))
 
     resizedImg=image.crop((
         math.floor(max(0,barycenter[0]-dist)),
