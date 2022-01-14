@@ -24,6 +24,10 @@ def mergeImages(image1, image2):
     return image1.convert("RGB")
 
 
+def scaleUp(scale, point):
+    return (int(scale*point[0]), int(scale*point[1]))
+
+
 def triangleColor(triangle, image):
     """Finds dominant color of triangle (using square of side length 2*r of incircle of triangle)."""
 
@@ -40,13 +44,11 @@ def triangleColor(triangle, image):
     # quarter of edge length of square inscribed in a cricle,
     # capped at 2, so the square always exists
     dist = max(2,r/(math.sqrt(2)*2))
-
     resizedImg=image.crop((
         math.floor(max(0,barycenter[0]-dist)),
         math.floor(max(0,barycenter[1]-dist)),
         math.floor(min(image.size[0],barycenter[0]+dist)),
         math.floor(min(image.size[1],barycenter[1]+dist))))
-
     return ImageBasedColorThief(resizedImg).get_color()
    
 

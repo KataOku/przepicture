@@ -3,6 +3,7 @@ import numpy
 from math import floor
 from skimage.filters.rank.generic import entropy
 from scipy.spatial import Delaunay
+from datetime import datetime
 
 import pictureTools, entropyCalc
 
@@ -94,14 +95,19 @@ class Picture():
 
     def triangulate(self, pointsCount=20):
         """Creates triangulation effect based on pointsCount points of max entropy"""
-        baseImg = self.image.resize((1000, int(self.image.size[1]*1000/self.image.size[0])))
-        result=baseImg.copy()
+        baseDimensions=self.image.size
+        scaleVal=4
+        baseImg = self.image.resize((int(baseDimensions[0]/scaleVal), int(baseDimensions[1]/scaleVal)))
+        result=self.image.copy()
         discourageDistance=floor(numpy.sqrt(baseImg.size[0]*baseImg.size[1] / pointsCount))
         interestPoints=entropyCalc.interestPointsCalc(baseImg, discourageDistance, pointsCount)        
-
+        
         for triangle in Delaunay(interestPoints).vertices:
-            triangleCoords=[interestPoints[triangle[0]], interestPoints[triangle[1]], interestPoints[triangle[2]]]
+            triangleCoords=[
+                pictureTools.scaleUp(scaleVal,interestPoints[triangle[0]]), 
+                pictureTools.scaleUp(scaleVal,interestPoints[triangle[1]]), 
+                pictureTools.scaleUp(scaleVal,interestPoints[triangle[2]])]
             ImageDraw.Draw(result).polygon(
                 triangleCoords, 
-                fill=pictureTools.triangleColor(triangleCoords, baseImg))
+                fill=pictureTools.triangleColor(triangleCoords, self.image))
         self.image=result
